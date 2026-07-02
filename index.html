@@ -45,7 +45,8 @@
   #map{height:74vh;border:2px solid var(--ink);background:var(--paper-alt);}
   .empty{border:1.5px dashed var(--line);padding:30px 20px;text-align:center;color:var(--ink-soft);font-size:13px;line-height:1.6;}
   .empty b{color:var(--ink);}
-  .card{background:var(--card);border:1px solid var(--line);padding:14px 16px;position:relative;}
+  .card{background:var(--card);border:1px solid var(--line);padding:14px 16px;position:relative;transition:box-shadow .2s ease, border-color .2s ease;}
+  .card.highlight{border-color:var(--rust);box-shadow:0 0 0 2px var(--rust);}
   .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
   .card-name{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;}
   .card-meta{font-size:12px;color:var(--ink-soft);margin-top:3px;}
@@ -408,10 +409,22 @@ function renderList(){
       ${p.notitie ? `<div class="card-note" style="pointer-events:none;">${escapeHtml(p.notitie)}</div>` : ''}
       <div class="card-actions">
         <button data-action="edit" data-id="${p.id}">Bewerk</button>
-        ${p.bron ? `<button data-action="open" data-url="${escapeAttr(p.bron)}">Bron</button>` : ''}
+        ${p.bron ? `<a href="${escapeAttr(p.bron)}" target="_blank" rel="noopener" style="font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-soft);text-decoration:none;">Bron</a>` : ''}
       </div>
     </div>
   `).join('');
+}
+
+function jumpToListItem(place){
+  if(window.innerWidth <= 880){
+    document.getElementById('listCol').classList.remove('hide-mobile');
+    document.getElementById('mapCol').classList.add('hide-mobile');
+  }
+  const card = document.querySelector(`.card[data-id="${place.id}"]`);
+  if(!card) return;
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  card.classList.add('highlight');
+  setTimeout(() => card.classList.remove('highlight'), 1800);
 }
 
 function renderMap(){
@@ -429,6 +442,7 @@ function renderMap(){
       ${p.bron ? `<div style="margin-top:6px;"><a href="${escapeAttr(p.bron)}" target="_blank" rel="noopener">bron &rarr;</a></div>` : ''}
     `);
     marker.addTo(markersLayer);
+    marker.on('click', () => jumpToListItem(p));
     bounds.push([p.lat, p.lng]);
   });
   if(userLoc){
@@ -699,13 +713,33 @@ document.getElementById('exportBackupBtn').addEventListener('click', exportBacku
 document.getElementById('modalOverlay').addEventListener('click', e => { if(e.target.id === 'modalOverlay') closeModal(); });
 
 document.getElementById('listCol').addEventListener('click', e => {
+  if(e.target.closest('a')) return; // Bron-link gewoon laten werken
   const btn = e.target.closest('button');
-  if(!btn) return;
-  if(btn.dataset.action === 'edit'){
-    const place = places.find(p => p.id === btn.dataset.id);
-    if(place) openModal(place);
-  } else if(btn.dataset.action === 'open'){
-    window.open(btn.dataset.url, '_blank');
+  if(btn){
+    if(btn.dataset.action === 'edit'){
+      const place = places.find(p => p.id === btn.dataset.id);
+      if(place) openModal(place);
+    }
+    return;
+  }
+  const card = e.target.closest('.card');
+  if(!card) return;
+  const place = places.find(p => p.id === card.dataset.id);
+  if(!place) return;
+  if(place.lat == null || place.lng == null){
+    alert('Deze plek heeft nog geen locatie. Zoek eerst coördinaten op via Bewerk.');
+    return;
+  }
+  map.setView([place.lat, place.lng], 16);
+  markersLayer.eachLayer(m => {
+    if(m.getLatLng && m.getLatLng().lat === place.lat && m.getLatLng().lng === place.lng){
+      m.openPopup();
+    }
+  });
+  if(window.innerWidth <= 880){
+    document.getElementById('mapCol').classList.remove('hide-mobile');
+    document.getElementById('listCol').classList.add('hide-mobile');
+    setTimeout(() => map.invalidateSize(), 50);
   }
 });
 
