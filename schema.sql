@@ -6,6 +6,9 @@ create table places (
   type text not null default 'beide',
   subcategorie text default '',
   prijsklasse text default '',
+  labels text[] default '{}',
+  score smallint,
+  adres text default '',
   stad text default '',
   provincie text default '',
   land text default '',
@@ -17,6 +20,12 @@ create table places (
   bron text default '',
   created_at timestamptz not null default now()
 );
+
+-- Heb je de tabel al eerder aangemaakt? Draai dan enkel deze regels
+-- in plaats van de create table hierboven:
+-- alter table places add column adres text default '';
+-- alter table places add column labels text[] default '{}';
+-- alter table places add column score smallint;
 
 -- Row Level Security aanzetten. Zonder policy is de tabel dan standaard
 -- ontoegankelijk; onderstaande policy staat lezen/schrijven toe voor

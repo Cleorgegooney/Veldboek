@@ -104,6 +104,7 @@
       <div class="sub">archief van eet- en drinkplekken</div>
     </div>
     <div class="header-actions">
+      <button class="btn btn-locate" id="myLocationBtn">Mijn locatie</button>
       <button class="btn btn-locate" id="locateBtn">In de buurt</button>
       <button class="btn btn-primary" id="addBtn">+ Nieuwe plek</button>
     </div>
@@ -134,6 +135,10 @@
       <option value="€">€</option>
       <option value="€€">€€</option>
       <option value="€€€">€€€</option>
+      <option value="€€€€">€€€€</option>
+    </select>
+    <select id="labelFilter">
+      <option value="alle">Alle labels</option>
     </select>
     <select id="subFilter">
       <option value="alle">Alle subcategorieën</option>
@@ -153,7 +158,7 @@
 
   <button class="import-toggle" id="importToggle">Importeren (CSV) &darr;</button>
   <div class="import-panel" id="importPanel">
-    <div class="hint">Formaat per regel: <b>naam; type; stad; provincie; lat; lng; notitie; bron</b>. Lat/lng, notitie en bron mogen leeg zijn.</div>
+    <div class="hint">Formaat per regel: <b>naam; type; adres; stad; provincie; lat; lng; notitie; bron</b>. Adres, lat/lng, notitie en bron mogen leeg zijn.</div>
     <input type="file" id="importFile" accept=".csv,.txt" style="margin-bottom:10px;">
     <textarea id="importText" placeholder="Café De Muze; drinken; Gent; Oost-Vlaanderen; 51.0543; 3.7174"></textarea>
     <div style="margin-top:10px;display:flex;gap:8px;">
@@ -178,9 +183,37 @@
       <div class="field"><label>Subcategorie</label><input type="text" id="f_sub" placeholder="bv. bistro, koffiebar"></div>
       <div class="field">
         <label>Prijsklasse</label>
-        <select id="f_prijs"><option value="">—</option><option value="€">€</option><option value="€€">€€</option><option value="€€€">€€€</option></select>
+        <select id="f_prijs"><option value="">—</option><option value="€">€</option><option value="€€">€€</option><option value="€€€">€€€</option><option value="€€€€">€€€€</option></select>
       </div>
     </div>
+    <div class="field">
+      <label>Score</label>
+      <div class="radio-group" id="scoreGroup">
+        <label><input type="radio" name="f_score" value="1"><span>1</span></label>
+        <label><input type="radio" name="f_score" value="2"><span>2</span></label>
+        <label><input type="radio" name="f_score" value="3"><span>3</span></label>
+        <label><input type="radio" name="f_score" value="4"><span>4</span></label>
+        <label><input type="radio" name="f_score" value="5"><span>5</span></label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Labels</label>
+      <div id="labelsGroup" style="display:flex;flex-wrap:wrap;gap:6px;">
+        <label style="border:1px solid var(--line);padding:6px 10px;font-size:12px;font-family:'IBM Plex Mono',monospace;cursor:pointer;"><input type="checkbox" name="f_labels" value="Diner" style="margin-right:4px;">Diner</label>
+        <label style="border:1px solid var(--line);padding:6px 10px;font-size:12px;font-family:'IBM Plex Mono',monospace;cursor:pointer;"><input type="checkbox" name="f_labels" value="Lunch" style="margin-right:4px;">Lunch</label>
+        <label style="border:1px solid var(--line);padding:6px 10px;font-size:12px;font-family:'IBM Plex Mono',monospace;cursor:pointer;"><input type="checkbox" name="f_labels" value="Terras" style="margin-right:4px;">Terras</label>
+        <label style="border:1px solid var(--line);padding:6px 10px;font-size:12px;font-family:'IBM Plex Mono',monospace;cursor:pointer;"><input type="checkbox" name="f_labels" value="Vegetarisch" style="margin-right:4px;">Vegetarisch</label>
+        <label style="border:1px solid var(--line);padding:6px 10px;font-size:12px;font-family:'IBM Plex Mono',monospace;cursor:pointer;"><input type="checkbox" name="f_labels" value="Vegan" style="margin-right:4px;">Vegan</label>
+        <label style="border:1px solid var(--line);padding:6px 10px;font-size:12px;font-family:'IBM Plex Mono',monospace;cursor:pointer;"><input type="checkbox" name="f_labels" value="Brunch" style="margin-right:4px;">Brunch</label>
+        <label style="border:1px solid var(--line);padding:6px 10px;font-size:12px;font-family:'IBM Plex Mono',monospace;cursor:pointer;"><input type="checkbox" name="f_labels" value="Ontbijt" style="margin-right:4px;">Ontbijt</label>
+        <label style="border:1px solid var(--line);padding:6px 10px;font-size:12px;font-family:'IBM Plex Mono',monospace;cursor:pointer;"><input type="checkbox" name="f_labels" value="Wijn" style="margin-right:4px;">Wijn</label>
+        <label style="border:1px solid var(--line);padding:6px 10px;font-size:12px;font-family:'IBM Plex Mono',monospace;cursor:pointer;"><input type="checkbox" name="f_labels" value="Cocktails" style="margin-right:4px;">Cocktails</label>
+        <label style="border:1px solid var(--line);padding:6px 10px;font-size:12px;font-family:'IBM Plex Mono',monospace;cursor:pointer;"><input type="checkbox" name="f_labels" value="Kindvriendelijk" style="margin-right:4px;">Kindvriendelijk</label>
+        <label style="border:1px solid var(--line);padding:6px 10px;font-size:12px;font-family:'IBM Plex Mono',monospace;cursor:pointer;"><input type="checkbox" name="f_labels" value="Takeaway" style="margin-right:4px;">Takeaway</label>
+        <label style="border:1px solid var(--line);padding:6px 10px;font-size:12px;font-family:'IBM Plex Mono',monospace;cursor:pointer;"><input type="checkbox" name="f_labels" value="Traiteur" style="margin-right:4px;">Traiteur</label>
+      </div>
+    </div>
+    <div class="field"><label>Adres (straat + nummer)</label><input type="text" id="f_adres" placeholder="bv. Vrijdagmarkt 10"></div>
     <div class="row2">
       <div class="field"><label>Stad</label><input type="text" id="f_stad"></div>
       <div class="field"><label>Provincie / regio</label><input type="text" id="f_provincie"></div>
@@ -228,7 +261,7 @@ let editingId = null;
 let userLoc = null;
 let map, markersLayer, userMarker;
 let isBulkGeocoding = false;
-let filterState = { type: 'alle', status: 'alle', prijsklasse: 'alle', subcategorie: 'alle', search: '' };
+let filterState = { type: 'alle', status: 'alle', prijsklasse: 'alle', subcategorie: 'alle', label: 'alle', search: '' };
 
 function haversine(lat1,lng1,lat2,lng2){
   const R = 6371;
@@ -301,6 +334,12 @@ function populateSubFilter(){
   const subs = [...new Set(places.map(p => (p.subcategorie||'').trim()).filter(Boolean))].sort();
   sel.innerHTML = '<option value="alle">Alle subcategorieën</option>' + subs.map(s => `<option value="${escapeAttr(s)}">${escapeHtml(s)}</option>`).join('');
   if(subs.includes(current)) sel.value = current;
+
+  const labelSel = document.getElementById('labelFilter');
+  const currentLabel = labelSel.value;
+  const allLabels = [...new Set(places.flatMap(p => p.labels || []))].sort();
+  labelSel.innerHTML = '<option value="alle">Alle labels</option>' + allLabels.map(l => `<option value="${escapeAttr(l)}">${escapeHtml(l)}</option>`).join('');
+  if(allLabels.includes(currentLabel)) labelSel.value = currentLabel;
 }
 
 function getFiltered(){
@@ -309,6 +348,7 @@ function getFiltered(){
     if(filterState.status !== 'alle' && p.status !== filterState.status) return false;
     if(filterState.prijsklasse !== 'alle' && p.prijsklasse !== filterState.prijsklasse) return false;
     if(filterState.subcategorie !== 'alle' && p.subcategorie !== filterState.subcategorie) return false;
+    if(filterState.label !== 'alle' && !(p.labels || []).includes(filterState.label)) return false;
     if(filterState.search){
       const s = filterState.search.toLowerCase();
       const hay = [p.naam,p.stad,p.provincie,p.subcategorie,p.land].join(' ').toLowerCase();
@@ -349,21 +389,23 @@ function renderList(){
     return;
   }
   col.innerHTML = list.map(p => `
-    <div class="card" data-id="${p.id}">
-      <div class="card-top">
+    <div class="card" data-id="${p.id}" style="cursor:pointer;">
+      <div class="card-top" style="pointer-events:none;">
         <div>
           <div class="card-name">${escapeHtml(p.naam)}</div>
-          <div class="card-meta">${escapeHtml(p.subcategorie || '')}${p.subcategorie ? ' · ' : ''}${escapeHtml(p.stad || '')}${p.provincie ? ', ' + escapeHtml(p.provincie) : ''}</div>
+          <div class="card-meta">${p.adres ? escapeHtml(p.adres) + ' · ' : ''}${escapeHtml(p.subcategorie || '')}${p.subcategorie ? ' · ' : ''}${escapeHtml(p.stad || '')}${p.provincie ? ', ' + escapeHtml(p.provincie) : ''}</div>
           ${p._dist != null ? `<div class="card-dist">${p._dist.toFixed(1)} km verwijderd</div>` : ''}
         </div>
         <div class="stamp ${stampClass(p.status)}">${p.status}</div>
       </div>
-      <div class="card-tags">
+      ${p.score ? `<div class="mono" style="color:var(--gold);font-size:13px;margin-top:6px;letter-spacing:1px;">${'★'.repeat(p.score)}${'☆'.repeat(5-p.score)}</div>` : ''}
+      <div class="card-tags" style="pointer-events:none;">
         ${p.prijsklasse ? `<span class="tag">${p.prijsklasse}</span>` : ''}
         ${p.terras ? `<span class="tag">terras</span>` : ''}
         <span class="tag">${p.type}</span>
+        ${(p.labels || []).map(l => `<span class="tag">${escapeHtml(l)}</span>`).join('')}
       </div>
-      ${p.notitie ? `<div class="card-note">${escapeHtml(p.notitie)}</div>` : ''}
+      ${p.notitie ? `<div class="card-note" style="pointer-events:none;">${escapeHtml(p.notitie)}</div>` : ''}
       <div class="card-actions">
         <button data-action="edit" data-id="${p.id}">Bewerk</button>
         ${p.bron ? `<button data-action="open" data-url="${escapeAttr(p.bron)}">Bron</button>` : ''}
@@ -416,6 +458,9 @@ function openModal(place){
   document.querySelectorAll('input[name=f_type]').forEach(r => r.checked = (r.value === (place?.type || 'eten')));
   document.getElementById('f_sub').value = place?.subcategorie || '';
   document.getElementById('f_prijs').value = place?.prijsklasse || '';
+  document.querySelectorAll('input[name=f_score]').forEach(r => r.checked = (String(place?.score || '') === r.value));
+  document.querySelectorAll('input[name=f_labels]').forEach(cb => cb.checked = (place?.labels || []).includes(cb.value));
+  document.getElementById('f_adres').value = place?.adres || '';
   document.getElementById('f_stad').value = place?.stad || '';
   document.getElementById('f_provincie').value = place?.provincie || '';
   document.getElementById('f_land').value = place?.land || 'België';
@@ -440,6 +485,9 @@ async function saveFromModal(){
     naam, type,
     subcategorie: document.getElementById('f_sub').value.trim(),
     prijsklasse: document.getElementById('f_prijs').value,
+    score: document.querySelector('input[name=f_score]:checked')?.value ? parseInt(document.querySelector('input[name=f_score]:checked').value) : null,
+    labels: Array.from(document.querySelectorAll('input[name=f_labels]:checked')).map(cb => cb.value),
+    adres: document.getElementById('f_adres').value.trim(),
     stad: document.getElementById('f_stad').value.trim(),
     provincie: document.getElementById('f_provincie').value.trim(),
     land: document.getElementById('f_land').value.trim() || 'België',
@@ -491,6 +539,37 @@ function toggleNearby(){
   }, () => { alert('Kon locatie niet ophalen.'); btn.textContent = 'In de buurt'; });
 }
 
+// --- Mijn locatie (live bolletje op de kaart, los van 'in de buurt') ---
+let myLocationWatchId = null;
+let myLocationMarker = null;
+function toggleMyLocation(){
+  const btn = document.getElementById('myLocationBtn');
+  if(myLocationWatchId !== null){
+    navigator.geolocation.clearWatch(myLocationWatchId);
+    myLocationWatchId = null;
+    if(myLocationMarker){ map.removeLayer(myLocationMarker); myLocationMarker = null; }
+    btn.classList.remove('active');
+    return;
+  }
+  if(!navigator.geolocation){ alert('Geolocatie niet ondersteund.'); return; }
+  btn.classList.add('active');
+  myLocationWatchId = navigator.geolocation.watchPosition(pos => {
+    const { latitude, longitude } = pos.coords;
+    if(myLocationMarker){
+      myLocationMarker.setLatLng([latitude, longitude]);
+    } else {
+      myLocationMarker = L.circleMarker([latitude, longitude], {
+        radius: 8, color: '#3E5C76', weight: 3, fillColor: '#EDE8DE', fillOpacity: 1
+      }).bindPopup('Jij bent hier').addTo(map);
+      map.setView([latitude, longitude], 14);
+    }
+  }, () => {
+    alert('Kon je locatie niet volgen.');
+    btn.classList.remove('active');
+    myLocationWatchId = null;
+  }, { enableHighAccuracy: true });
+}
+
 // --- Geocoding (Nominatim, draait client-side) ---
 async function geocodeQuery(query){
   if(!query || !query.trim()) return null;
@@ -504,6 +583,9 @@ async function geocodeQuery(query){
   return null;
 }
 function buildQueryForPlace(p){
+  if(p.adres){
+    return [p.adres, p.stad, p.provincie, p.land].filter(Boolean).join(', ');
+  }
   const parts = [p.naam];
   if(p.stad) parts.push(p.stad);
   if(p.provincie) parts.push(p.provincie);
@@ -512,10 +594,13 @@ function buildQueryForPlace(p){
 }
 async function geocodeFromForm(){
   const naam = document.getElementById('f_naam').value.trim();
+  const adres = document.getElementById('f_adres').value.trim();
   const stad = document.getElementById('f_stad').value.trim();
   const provincie = document.getElementById('f_provincie').value.trim();
   const land = document.getElementById('f_land').value.trim();
-  const query = [naam, stad, provincie, land].filter(Boolean).join(', ');
+  const query = adres
+    ? [adres, stad, provincie, land].filter(Boolean).join(', ')
+    : [naam, stad, provincie, land].filter(Boolean).join(', ');
   if(!query){ alert('Vul minstens naam of stad in.'); return; }
   const btn = document.getElementById('geocodeBtn');
   btn.textContent = 'Zoeken...';
@@ -583,11 +668,11 @@ async function importCsv(){
   for(const line of lines){
     const parts = line.split(';').map(s => s.trim());
     if(parts.length < 1 || !parts[0]) continue;
-    const [naam, type, stad, provincie, lat, lng, notitie, bron] = parts;
+    const [naam, type, adres, stad, provincie, lat, lng, notitie, bron] = parts;
     rows.push({
       naam, type: ['eten','drinken','beide'].includes(type) ? type : 'beide',
       subcategorie: '', prijsklasse: '',
-      stad: stad || '', provincie: provincie || '', land: '',
+      adres: adres || '', stad: stad || '', provincie: provincie || '', land: '',
       lat: lat ? parseFloat(lat) : null, lng: lng ? parseFloat(lng) : null,
       status: 'wil gaan', terras: false, notitie: notitie || '', bron: bron || ''
     });
@@ -607,6 +692,7 @@ document.getElementById('saveBtn').addEventListener('click', saveFromModal);
 document.getElementById('deleteBtn').addEventListener('click', deleteCurrentPlace);
 document.getElementById('useLocationBtn').addEventListener('click', useLocationInForm);
 document.getElementById('geocodeBtn').addEventListener('click', geocodeFromForm);
+document.getElementById('myLocationBtn').addEventListener('click', toggleMyLocation);
 document.getElementById('locateBtn').addEventListener('click', toggleNearby);
 document.getElementById('bulkGeocodeBtn').addEventListener('click', bulkGeocode);
 document.getElementById('exportBackupBtn').addEventListener('click', exportBackup);
@@ -634,6 +720,7 @@ document.querySelectorAll('.chip[data-filter=type]').forEach(chip => {
 document.getElementById('statusFilter').addEventListener('change', e => { filterState.status = e.target.value; renderAll(); });
 document.getElementById('prijsFilter').addEventListener('change', e => { filterState.prijsklasse = e.target.value; renderAll(); });
 document.getElementById('subFilter').addEventListener('change', e => { filterState.subcategorie = e.target.value; renderAll(); });
+document.getElementById('labelFilter').addEventListener('change', e => { filterState.label = e.target.value; renderAll(); });
 document.getElementById('searchInput').addEventListener('input', e => { filterState.search = e.target.value; renderAll(); });
 
 document.getElementById('importToggle').addEventListener('click', () => document.getElementById('importPanel').classList.toggle('open'));
