@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Veldboek</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EDE8DE; --paper-alt:#E3DDCE; --card:#F7F4EC;
+    --ink:#201F1B; --ink-soft:#5C594F; --line:#C9C2B0;
+    --olive:#5B6B4D; --rust:#A6522F; --blue:#3E5C76; --gold:#A9832E;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif;margin:0;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .app{max-width:1400px;margin:0 auto;padding:0 20px 40px;}
+  header{display:flex;justify-content:space-between;align-items:flex-end;padding:28px 0 18px;border-bottom:2px solid var(--ink);gap:16px;flex-wrap:wrap;}
+  .brand h1{font-size:28px;letter-spacing:0.5px;}
+  .brand .sub{font-size:12px;color:var(--ink-soft);margin-top:4px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;}
+  .header-actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .btn{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.06em;text-transform:uppercase;padding:10px 16px;border:1.5px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;transition:all .15s ease;}
+  .btn:hover{background:var(--ink);color:var(--paper);}
+  .btn:disabled{opacity:0.4;cursor:not-allowed;}
+  .btn-primary{background:var(--ink);color:var(--paper);}
+  .btn-primary:hover{background:var(--rust);border-color:var(--rust);}
+  .btn-locate{border-color:var(--blue);color:var(--blue);}
+  .btn-locate:hover{background:var(--blue);color:var(--paper);}
+  .btn-locate.active{background:var(--blue);color:var(--paper);}
+  .stats{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);margin:14px 0 10px;}
+  .toolrow{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:18px;}
+  .chip{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.05em;text-transform:uppercase;padding:7px 14px;border:1px solid var(--line);background:var(--card);color:var(--ink-soft);cursor:pointer;border-radius:2px;}
+  .chip.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  .search-input, .filters select{font-family:'Inter',sans-serif;font-size:13px;padding:8px 10px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:2px;}
+  .search-input{min-width:180px;}
+  .filter-label{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;color:var(--ink-soft);letter-spacing:0.05em;margin-right:-4px;}
+  .view-toggle{display:none;gap:6px;margin-bottom:14px;}
+  .layout{display:grid;grid-template-columns:420px 1fr;gap:18px;align-items:start;}
+  .list-col{display:flex;flex-direction:column;gap:10px;max-height:74vh;overflow-y:auto;padding-right:4px;}
+  .map-col{position:sticky;top:20px;}
+  #map{height:74vh;border:2px solid var(--ink);background:var(--paper-alt);}
+  .empty{border:1.5px dashed var(--line);padding:30px 20px;text-align:center;color:var(--ink-soft);font-size:13px;line-height:1.6;}
+  .empty b{color:var(--ink);}
+  .card{background:var(--card);border:1px solid var(--line);padding:14px 16px;position:relative;}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .card-name{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;}
+  .card-meta{font-size:12px;color:var(--ink-soft);margin-top:3px;}
+  .card-dist{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--blue);margin-top:4px;}
+  .stamp{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;padding:3px 8px;border:1.5px solid;transform:rotate(-3deg);white-space:nowrap;border-radius:2px;}
+  .stamp-wilgaan{color:var(--rust);border-color:var(--rust);}
+  .stamp-geweest{color:var(--olive);border-color:var(--olive);}
+  .stamp-favoriet{color:var(--gold);border-color:var(--gold);}
+  .card-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+  .tag{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-soft);border:1px solid var(--line);padding:2px 7px;border-radius:2px;}
+  .card-note{font-size:12.5px;color:var(--ink-soft);margin-top:8px;line-height:1.5;}
+  .card-actions{display:flex;gap:14px;margin-top:10px;}
+  .card-actions button{background:none;border:none;font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-soft);cursor:pointer;padding:0;}
+  .card-actions button:hover{color:var(--rust);}
+  .modal-overlay{position:fixed;inset:0;background:rgba(32,31,27,0.55);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--paper);border:2px solid var(--ink);max-width:520px;width:100%;max-height:88vh;overflow-y:auto;padding:26px;}
+  .modal h2{font-size:20px;margin-bottom:18px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-soft);margin-bottom:5px;}
+  .field input[type=text], .field input[type=number], .field input[type=url], .field select, .field textarea{width:100%;padding:9px 10px;border:1px solid var(--line);background:var(--card);font-family:'Inter',sans-serif;font-size:13.5px;color:var(--ink);}
+  .field textarea{resize:vertical;min-height:60px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .radio-group{display:flex;gap:8px;}
+  .radio-group label{flex:1;text-align:center;padding:9px;border:1px solid var(--line);cursor:pointer;font-size:12.5px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em;color:var(--ink-soft);}
+  .radio-group input{display:none;}
+  .radio-group label:has(input:checked){background:var(--ink);color:var(--paper);}
+  .checkbox-line{display:flex;align-items:center;gap:8px;font-size:13px;}
+  .modal-actions{display:flex;justify-content:space-between;margin-top:20px;gap:10px;}
+  .modal-actions .left{display:flex;gap:8px;}
+  .locate-inline{font-size:11px;color:var(--blue);border:1px solid var(--blue);background:none;padding:8px 10px;cursor:pointer;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;}
+  .import-toggle{margin-top:24px;font-size:12px;color:var(--ink-soft);cursor:pointer;font-family:'IBM Plex Mono',monospace;text-decoration:underline;background:none;border:none;padding:0;}
+  .import-panel{display:none;margin-top:12px;border:1.5px dashed var(--line);padding:16px;background:var(--card);}
+  .import-panel.open{display:block;}
+  .import-panel textarea{width:100%;min-height:100px;font-family:'IBM Plex Mono',monospace;font-size:12px;padding:8px;border:1px solid var(--line);}
+  .import-panel .hint{font-size:11.5px;color:var(--ink-soft);margin:8px 0;line-height:1.5;}
+  .leaflet-popup-content{font-family:'Inter',sans-serif;font-size:13px;}
+  .popup-name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;}
+  .popup-meta{color:var(--ink-soft);font-size:11.5px;margin:3px 0 6px;}
+  .connbar{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:8px 12px;margin:14px 0;border:1px solid;}
+  .connbar.err{color:var(--rust);border-color:var(--rust);background:#F6E8E1;}
+  @media (max-width: 880px){
+    .layout{grid-template-columns:1fr;}
+    .map-col, .list-col{max-height:none;}
+    .view-toggle{display:flex;}
+    .map-col.hide-mobile, .list-col.hide-mobile{display:none;}
+    #map{height:60vh;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <h1>VELDBOEK</h1>
+      <div class="sub">archief van eet- en drinkplekken</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-locate" id="locateBtn">In de buurt</button>
+      <button class="btn btn-primary" id="addBtn">+ Nieuwe plek</button>
+    </div>
+  </header>
+
+  <div id="connError" class="connbar err" style="display:none;"></div>
+
+  <div class="stats" id="stats"></div>
+  <div class="toolrow">
+    <button class="btn btn-locate" id="bulkGeocodeBtn">Geocodeer ontbrekende locaties</button>
+    <span class="mono" id="geocodeProgress" style="font-size:11px;color:var(--ink-soft);"></span>
+    <button class="btn" id="exportBackupBtn">Exporteer back-up</button>
+  </div>
+
+  <div class="filters">
+    <div class="chip active" data-filter="type" data-value="alle">Alles</div>
+    <div class="chip" data-filter="type" data-value="eten">Eten</div>
+    <div class="chip" data-filter="type" data-value="drinken">Drinken</div>
+    <div class="chip" data-filter="type" data-value="beide">Beide</div>
+    <select id="statusFilter">
+      <option value="alle">Alle statussen</option>
+      <option value="wil gaan">Wil gaan</option>
+      <option value="geweest">Geweest</option>
+      <option value="favoriet">Favoriet</option>
+    </select>
+    <select id="prijsFilter">
+      <option value="alle">Alle prijzen</option>
+      <option value="€">€</option>
+      <option value="€€">€€</option>
+      <option value="€€€">€€€</option>
+    </select>
+    <select id="subFilter">
+      <option value="alle">Alle subcategorieën</option>
+    </select>
+    <input class="search-input" id="searchInput" type="text" placeholder="Zoek stad, provincie, naam...">
+  </div>
+
+  <div class="view-toggle">
+    <button class="btn" id="showListBtn">Lijst</button>
+    <button class="btn" id="showMapBtn">Kaart</button>
+  </div>
+
+  <div class="layout">
+    <div class="list-col" id="listCol"></div>
+    <div class="map-col" id="mapCol"><div id="map"></div></div>
+  </div>
+
+  <button class="import-toggle" id="importToggle">Importeren (CSV) &darr;</button>
+  <div class="import-panel" id="importPanel">
+    <div class="hint">Formaat per regel: <b>naam; type; stad; provincie; lat; lng; notitie; bron</b>. Lat/lng, notitie en bron mogen leeg zijn.</div>
+    <input type="file" id="importFile" accept=".csv,.txt" style="margin-bottom:10px;">
+    <textarea id="importText" placeholder="Café De Muze; drinken; Gent; Oost-Vlaanderen; 51.0543; 3.7174"></textarea>
+    <div style="margin-top:10px;display:flex;gap:8px;">
+      <button class="btn" id="importBtn">Importeer regels</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2 id="modalTitle">Nieuwe plek</h2>
+    <div class="field"><label>Naam</label><input type="text" id="f_naam"></div>
+    <div class="field">
+      <label>Type</label>
+      <div class="radio-group">
+        <label><input type="radio" name="f_type" value="eten"><span>Eten</span></label>
+        <label><input type="radio" name="f_type" value="drinken"><span>Drinken</span></label>
+        <label><input type="radio" name="f_type" value="beide"><span>Beide</span></label>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Subcategorie</label><input type="text" id="f_sub" placeholder="bv. bistro, koffiebar"></div>
+      <div class="field">
+        <label>Prijsklasse</label>
+        <select id="f_prijs"><option value="">—</option><option value="€">€</option><option value="€€">€€</option><option value="€€€">€€€</option></select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Stad</label><input type="text" id="f_stad"></div>
+      <div class="field"><label>Provincie / regio</label><input type="text" id="f_provincie"></div>
+    </div>
+    <div class="field"><label>Land</label><input type="text" id="f_land" value="België"></div>
+    <div class="row2">
+      <div class="field"><label>Latitude</label><input type="number" step="any" id="f_lat"></div>
+      <div class="field"><label>Longitude</label><input type="number" step="any" id="f_lng"></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="locate-inline" id="useLocationBtn" type="button">Gebruik huidige locatie</button>
+      <button class="locate-inline" id="geocodeBtn" type="button">Zoek coördinaten</button>
+    </div>
+    <div class="row2" style="margin-top:14px;">
+      <div class="field">
+        <label>Status</label>
+        <select id="f_status"><option value="wil gaan">Wil gaan</option><option value="geweest">Geweest</option><option value="favoriet">Favoriet</option></select>
+      </div>
+      <div class="field">
+        <label>Terras</label>
+        <div class="checkbox-line" style="margin-top:9px;"><input type="checkbox" id="f_terras"> <span>Ja, heeft terras</span></div>
+      </div>
+    </div>
+    <div class="field"><label>Notitie</label><textarea id="f_notitie" placeholder="sfeer, aanrader van, wat te bestellen..."></textarea></div>
+    <div class="field"><label>Bron (link)</label><input type="url" id="f_bron" placeholder="https://..."></div>
+    <div class="modal-actions">
+      <div class="left">
+        <button class="btn" id="cancelBtn">Annuleer</button>
+        <button class="btn btn-primary" id="saveBtn">Opslaan</button>
+      </div>
+      <button class="btn" id="deleteBtn" style="display:none;border-color:var(--rust);color:var(--rust);">Verwijder</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const TABLE = 'places';
+
+let places = [];
+let editingId = null;
+let userLoc = null;
+let map, markersLayer, userMarker;
+let isBulkGeocoding = false;
+let filterState = { type: 'alle', status: 'alle', prijsklasse: 'alle', subcategorie: 'alle', search: '' };
+
+function haversine(lat1,lng1,lat2,lng2){
+  const R = 6371;
+  const dLat = (lat2-lat1) * Math.PI/180;
+  const dLng = (lng2-lng1) * Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function showConnError(msg){
+  const el = document.getElementById('connError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+async function loadPlaces(){
+  const { data, error } = await sb.from(TABLE).select('*').order('naam');
+  if(error){
+    showConnError('Kon geen verbinding maken met de database. Controleer SUPABASE_URL en SUPABASE_ANON_KEY in config.js. (' + error.message + ')');
+    places = [];
+    return;
+  }
+  places = data || [];
+}
+
+async function insertPlace(data){
+  const { data: inserted, error } = await sb.from(TABLE).insert([data]).select();
+  if(error){ console.error(error); return null; }
+  return inserted[0];
+}
+async function updatePlaceRow(id, data){
+  const { error } = await sb.from(TABLE).update(data).eq('id', id);
+  if(error) console.error(error);
+}
+async function deletePlaceRow(id){
+  const { error } = await sb.from(TABLE).delete().eq('id', id);
+  if(error) console.error(error);
+}
+async function bulkInsert(rows){
+  const chunkSize = 200;
+  let inserted = 0;
+  for(let i = 0; i < rows.length; i += chunkSize){
+    const chunk = rows.slice(i, i + chunkSize);
+    const { error } = await sb.from(TABLE).insert(chunk);
+    if(error){ console.error(error); continue; }
+    inserted += chunk.length;
+  }
+  return inserted;
+}
+
+function initMap(){
+  map = L.map('map', { zoomControl: true }).setView([50.85, 4.35], 7);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 19 }).addTo(map);
+  markersLayer = L.layerGroup().addTo(map);
+}
+function colorForType(type){
+  if(type === 'eten') return '#A6522F';
+  if(type === 'drinken') return '#3E5C76';
+  return '#5B6B4D';
+}
+function stampClass(status){
+  if(status === 'wil gaan') return 'stamp-wilgaan';
+  if(status === 'geweest') return 'stamp-geweest';
+  return 'stamp-favoriet';
+}
+
+function populateSubFilter(){
+  const sel = document.getElementById('subFilter');
+  const current = sel.value;
+  const subs = [...new Set(places.map(p => (p.subcategorie||'').trim()).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="alle">Alle subcategorieën</option>' + subs.map(s => `<option value="${escapeAttr(s)}">${escapeHtml(s)}</option>`).join('');
+  if(subs.includes(current)) sel.value = current;
+}
+
+function getFiltered(){
+  let list = places.filter(p => {
+    if(filterState.type !== 'alle' && p.type !== filterState.type) return false;
+    if(filterState.status !== 'alle' && p.status !== filterState.status) return false;
+    if(filterState.prijsklasse !== 'alle' && p.prijsklasse !== filterState.prijsklasse) return false;
+    if(filterState.subcategorie !== 'alle' && p.subcategorie !== filterState.subcategorie) return false;
+    if(filterState.search){
+      const s = filterState.search.toLowerCase();
+      const hay = [p.naam,p.stad,p.provincie,p.subcategorie,p.land].join(' ').toLowerCase();
+      if(!hay.includes(s)) return false;
+    }
+    return true;
+  });
+  if(userLoc){
+    list = list.filter(p => p.lat != null && p.lng != null);
+    list.forEach(p => p._dist = haversine(userLoc.lat, userLoc.lng, p.lat, p.lng));
+    list.sort((a,b) => a._dist - b._dist);
+  } else {
+    list.sort((a,b) => a.naam.localeCompare(b.naam));
+  }
+  return list;
+}
+
+function renderStats(){
+  const provincies = new Set(places.map(p => p.provincie).filter(Boolean));
+  document.getElementById('stats').textContent = places.length + ' plekken · ' + provincies.size + ' provincies/regio\'s';
+  const missing = places.filter(p => p.lat == null || p.lng == null).length;
+  const btn = document.getElementById('bulkGeocodeBtn');
+  if(!isBulkGeocoding){
+    btn.textContent = missing > 0 ? `Geocodeer ontbrekende locaties (${missing})` : 'Alle locaties bekend';
+    btn.disabled = missing === 0;
+  }
+}
+
+function renderList(){
+  const list = getFiltered();
+  const col = document.getElementById('listCol');
+  if(places.length === 0){
+    col.innerHTML = '<div class="empty"><b>Nog geen plekken.</b><br>Voeg toe via "+ Nieuwe plek", of importeer een CSV hieronder.</div>';
+    return;
+  }
+  if(list.length === 0){
+    col.innerHTML = '<div class="empty">Niets gevonden voor deze filters.</div>';
+    return;
+  }
+  col.innerHTML = list.map(p => `
+    <div class="card" data-id="${p.id}">
+      <div class="card-top">
+        <div>
+          <div class="card-name">${escapeHtml(p.naam)}</div>
+          <div class="card-meta">${escapeHtml(p.subcategorie || '')}${p.subcategorie ? ' · ' : ''}${escapeHtml(p.stad || '')}${p.provincie ? ', ' + escapeHtml(p.provincie) : ''}</div>
+          ${p._dist != null ? `<div class="card-dist">${p._dist.toFixed(1)} km verwijderd</div>` : ''}
+        </div>
+        <div class="stamp ${stampClass(p.status)}">${p.status}</div>
+      </div>
+      <div class="card-tags">
+        ${p.prijsklasse ? `<span class="tag">${p.prijsklasse}</span>` : ''}
+        ${p.terras ? `<span class="tag">terras</span>` : ''}
+        <span class="tag">${p.type}</span>
+      </div>
+      ${p.notitie ? `<div class="card-note">${escapeHtml(p.notitie)}</div>` : ''}
+      <div class="card-actions">
+        <button data-action="edit" data-id="${p.id}">Bewerk</button>
+        ${p.bron ? `<button data-action="open" data-url="${escapeAttr(p.bron)}">Bron</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderMap(){
+  markersLayer.clearLayers();
+  const list = getFiltered();
+  const bounds = [];
+  list.forEach(p => {
+    if(p.lat == null || p.lng == null) return;
+    const marker = L.circleMarker([p.lat, p.lng], { radius: 8, color: colorForType(p.type), weight: 2, fillColor: colorForType(p.type), fillOpacity: 0.6 });
+    marker.bindPopup(`
+      <div class="popup-name">${escapeHtml(p.naam)}</div>
+      <div class="popup-meta">${escapeHtml(p.subcategorie||'')} ${p.stad ? '· '+escapeHtml(p.stad) : ''}</div>
+      <div class="stamp ${stampClass(p.status)}" style="display:inline-block;">${p.status}</div>
+      ${p.notitie ? `<div style="margin-top:6px;font-size:12px;">${escapeHtml(p.notitie)}</div>` : ''}
+      ${p.bron ? `<div style="margin-top:6px;"><a href="${escapeAttr(p.bron)}" target="_blank" rel="noopener">bron &rarr;</a></div>` : ''}
+    `);
+    marker.addTo(markersLayer);
+    bounds.push([p.lat, p.lng]);
+  });
+  if(userLoc){
+    if(userMarker) markersLayer.removeLayer(userMarker);
+    userMarker = L.circleMarker([userLoc.lat, userLoc.lng], { radius: 7, color: '#201F1B', weight: 2, fillColor: '#EDE8DE', fillOpacity: 1 }).bindPopup('Jouw locatie');
+    userMarker.addTo(markersLayer);
+    bounds.push([userLoc.lat, userLoc.lng]);
+  }
+  if(bounds.length > 0) map.fitBounds(bounds, { padding: [30,30], maxZoom: 14 });
+}
+
+function renderAll(){
+  populateSubFilter();
+  renderStats();
+  renderList();
+  renderMap();
+}
+
+function escapeHtml(str){ const d = document.createElement('div'); d.textContent = str || ''; return d.innerHTML; }
+function escapeAttr(str){ return (str||'').replace(/"/g,'&quot;'); }
+
+// --- Modal ---
+function openModal(place){
+  editingId = place ? place.id : null;
+  document.getElementById('modalTitle').textContent = place ? 'Bewerk plek' : 'Nieuwe plek';
+  document.getElementById('f_naam').value = place?.naam || '';
+  document.querySelectorAll('input[name=f_type]').forEach(r => r.checked = (r.value === (place?.type || 'eten')));
+  document.getElementById('f_sub').value = place?.subcategorie || '';
+  document.getElementById('f_prijs').value = place?.prijsklasse || '';
+  document.getElementById('f_stad').value = place?.stad || '';
+  document.getElementById('f_provincie').value = place?.provincie || '';
+  document.getElementById('f_land').value = place?.land || 'België';
+  document.getElementById('f_lat').value = place?.lat ?? '';
+  document.getElementById('f_lng').value = place?.lng ?? '';
+  document.getElementById('f_status').value = place?.status || 'wil gaan';
+  document.getElementById('f_terras').checked = !!place?.terras;
+  document.getElementById('f_notitie').value = place?.notitie || '';
+  document.getElementById('f_bron').value = place?.bron || '';
+  document.getElementById('deleteBtn').style.display = place ? 'block' : 'none';
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); editingId = null; }
+
+async function saveFromModal(){
+  const naam = document.getElementById('f_naam').value.trim();
+  if(!naam){ alert('Naam is verplicht.'); return; }
+  const type = document.querySelector('input[name=f_type]:checked')?.value || 'eten';
+  const latVal = document.getElementById('f_lat').value;
+  const lngVal = document.getElementById('f_lng').value;
+  const data = {
+    naam, type,
+    subcategorie: document.getElementById('f_sub').value.trim(),
+    prijsklasse: document.getElementById('f_prijs').value,
+    stad: document.getElementById('f_stad').value.trim(),
+    provincie: document.getElementById('f_provincie').value.trim(),
+    land: document.getElementById('f_land').value.trim() || 'België',
+    lat: latVal !== '' ? parseFloat(latVal) : null,
+    lng: lngVal !== '' ? parseFloat(lngVal) : null,
+    status: document.getElementById('f_status').value,
+    terras: document.getElementById('f_terras').checked,
+    notitie: document.getElementById('f_notitie').value.trim(),
+    bron: document.getElementById('f_bron').value.trim()
+  };
+  if(editingId){
+    await updatePlaceRow(editingId, data);
+    const idx = places.findIndex(p => p.id === editingId);
+    if(idx > -1) places[idx] = { ...places[idx], ...data };
+  } else {
+    const inserted = await insertPlace(data);
+    if(inserted) places.push(inserted);
+  }
+  closeModal();
+  renderAll();
+}
+
+async function deleteCurrentPlace(){
+  if(!editingId) return;
+  if(!confirm('Deze plek verwijderen?')) return;
+  await deletePlaceRow(editingId);
+  places = places.filter(p => p.id !== editingId);
+  closeModal();
+  renderAll();
+}
+
+// --- Geolocatie ---
+function useLocationInForm(){
+  if(!navigator.geolocation){ alert('Geolocatie niet ondersteund.'); return; }
+  navigator.geolocation.getCurrentPosition(pos => {
+    document.getElementById('f_lat').value = pos.coords.latitude.toFixed(6);
+    document.getElementById('f_lng').value = pos.coords.longitude.toFixed(6);
+  }, () => alert('Kon locatie niet ophalen.'));
+}
+function toggleNearby(){
+  const btn = document.getElementById('locateBtn');
+  if(userLoc){ userLoc = null; btn.classList.remove('active'); btn.textContent = 'In de buurt'; renderAll(); return; }
+  if(!navigator.geolocation){ alert('Geolocatie niet ondersteund.'); return; }
+  btn.textContent = 'Zoeken...';
+  navigator.geolocation.getCurrentPosition(pos => {
+    userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    btn.textContent = 'In de buurt'; btn.classList.add('active');
+    renderAll();
+  }, () => { alert('Kon locatie niet ophalen.'); btn.textContent = 'In de buurt'; });
+}
+
+// --- Geocoding (Nominatim, draait client-side) ---
+async function geocodeQuery(query){
+  if(!query || !query.trim()) return null;
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`;
+  try{
+    const res = await fetch(url, { headers: { 'Accept-Language': 'nl' } });
+    if(!res.ok) return null;
+    const data = await res.json();
+    if(data && data[0]) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+  }catch(e){ console.error('Geocode mislukt', e); }
+  return null;
+}
+function buildQueryForPlace(p){
+  const parts = [p.naam];
+  if(p.stad) parts.push(p.stad);
+  if(p.provincie) parts.push(p.provincie);
+  if(p.land) parts.push(p.land);
+  return parts.filter(Boolean).join(', ');
+}
+async function geocodeFromForm(){
+  const naam = document.getElementById('f_naam').value.trim();
+  const stad = document.getElementById('f_stad').value.trim();
+  const provincie = document.getElementById('f_provincie').value.trim();
+  const land = document.getElementById('f_land').value.trim();
+  const query = [naam, stad, provincie, land].filter(Boolean).join(', ');
+  if(!query){ alert('Vul minstens naam of stad in.'); return; }
+  const btn = document.getElementById('geocodeBtn');
+  btn.textContent = 'Zoeken...';
+  const result = await geocodeQuery(query);
+  btn.textContent = 'Zoek coördinaten';
+  if(result){
+    document.getElementById('f_lat').value = result.lat.toFixed(6);
+    document.getElementById('f_lng').value = result.lng.toFixed(6);
+  } else {
+    alert('Geen locatie gevonden voor "' + query + '".');
+  }
+}
+async function bulkGeocode(){
+  if(isBulkGeocoding) return;
+  const todo = places.filter(p => (p.lat == null || p.lng == null));
+  if(todo.length === 0){ alert('Alles heeft al coördinaten.'); return; }
+  if(!confirm(todo.length + ' plekken zonder locatie. Dit loopt ~1 plek/seconde (' + Math.ceil(todo.length/60) + ' min). Doorgaan?')) return;
+  isBulkGeocoding = true;
+  const btn = document.getElementById('bulkGeocodeBtn');
+  const progress = document.getElementById('geocodeProgress');
+  btn.disabled = true;
+  let done = 0, found = 0;
+  for(const p of todo){
+    const result = await geocodeQuery(buildQueryForPlace(p));
+    if(result){
+      p.lat = result.lat; p.lng = result.lng;
+      await updatePlaceRow(p.id, { lat: result.lat, lng: result.lng });
+      found++;
+    }
+    done++;
+    progress.textContent = done + ' / ' + todo.length + ' verwerkt (' + found + ' gevonden)';
+    if(done % 15 === 0) renderAll();
+    await new Promise(r => setTimeout(r, 1100));
+  }
+  renderAll();
+  isBulkGeocoding = false;
+  btn.disabled = false;
+  progress.textContent = 'Klaar: ' + found + ' van ' + todo.length + ' gelokaliseerd.';
+}
+
+// --- Back-up (extra vangnet, ook al zit alles in Supabase) ---
+function exportBackup(){
+  if(places.length === 0){ alert('Nog niets om te exporteren.'); return; }
+  const blob = new Blob([JSON.stringify(places, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `veldboek-backup-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// --- Import ---
+document.getElementById('importFile').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = evt => { document.getElementById('importText').value = evt.target.result; };
+  reader.readAsText(file, 'UTF-8');
+});
+async function importCsv(){
+  const raw = document.getElementById('importText').value.trim();
+  if(!raw){ alert('Geen data om te importeren.'); return; }
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  const rows = [];
+  for(const line of lines){
+    const parts = line.split(';').map(s => s.trim());
+    if(parts.length < 1 || !parts[0]) continue;
+    const [naam, type, stad, provincie, lat, lng, notitie, bron] = parts;
+    rows.push({
+      naam, type: ['eten','drinken','beide'].includes(type) ? type : 'beide',
+      subcategorie: '', prijsklasse: '',
+      stad: stad || '', provincie: provincie || '', land: '',
+      lat: lat ? parseFloat(lat) : null, lng: lng ? parseFloat(lng) : null,
+      status: 'wil gaan', terras: false, notitie: notitie || '', bron: bron || ''
+    });
+  }
+  const added = await bulkInsert(rows);
+  await loadPlaces();
+  document.getElementById('importText').value = '';
+  document.getElementById('importFile').value = '';
+  renderAll();
+  alert(added + ' plek(ken) geïmporteerd.');
+}
+
+// --- Events ---
+document.getElementById('addBtn').addEventListener('click', () => openModal(null));
+document.getElementById('cancelBtn').addEventListener('click', closeModal);
+document.getElementById('saveBtn').addEventListener('click', saveFromModal);
+document.getElementById('deleteBtn').addEventListener('click', deleteCurrentPlace);
+document.getElementById('useLocationBtn').addEventListener('click', useLocationInForm);
+document.getElementById('geocodeBtn').addEventListener('click', geocodeFromForm);
+document.getElementById('locateBtn').addEventListener('click', toggleNearby);
+document.getElementById('bulkGeocodeBtn').addEventListener('click', bulkGeocode);
+document.getElementById('exportBackupBtn').addEventListener('click', exportBackup);
+document.getElementById('modalOverlay').addEventListener('click', e => { if(e.target.id === 'modalOverlay') closeModal(); });
+
+document.getElementById('listCol').addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  if(btn.dataset.action === 'edit'){
+    const place = places.find(p => p.id === btn.dataset.id);
+    if(place) openModal(place);
+  } else if(btn.dataset.action === 'open'){
+    window.open(btn.dataset.url, '_blank');
+  }
+});
+
+document.querySelectorAll('.chip[data-filter=type]').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.chip[data-filter=type]').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    filterState.type = chip.dataset.value;
+    renderAll();
+  });
+});
+document.getElementById('statusFilter').addEventListener('change', e => { filterState.status = e.target.value; renderAll(); });
+document.getElementById('prijsFilter').addEventListener('change', e => { filterState.prijsklasse = e.target.value; renderAll(); });
+document.getElementById('subFilter').addEventListener('change', e => { filterState.subcategorie = e.target.value; renderAll(); });
+document.getElementById('searchInput').addEventListener('input', e => { filterState.search = e.target.value; renderAll(); });
+
+document.getElementById('importToggle').addEventListener('click', () => document.getElementById('importPanel').classList.toggle('open'));
+document.getElementById('importBtn').addEventListener('click', importCsv);
+
+document.getElementById('showListBtn').addEventListener('click', () => {
+  document.getElementById('listCol').classList.remove('hide-mobile');
+  document.getElementById('mapCol').classList.add('hide-mobile');
+});
+document.getElementById('showMapBtn').addEventListener('click', () => {
+  document.getElementById('mapCol').classList.remove('hide-mobile');
+  document.getElementById('listCol').classList.add('hide-mobile');
+  setTimeout(() => map.invalidateSize(), 50);
+});
+
+// --- Init ---
+(async function init(){
+  initMap();
+  document.getElementById('listCol').innerHTML = '<div class="empty">Laden...</div>';
+  await loadPlaces();
+  renderAll();
+  if(window.innerWidth <= 880) document.getElementById('mapCol').classList.add('hide-mobile');
+})();
+</script>
+</body>
+</html>
